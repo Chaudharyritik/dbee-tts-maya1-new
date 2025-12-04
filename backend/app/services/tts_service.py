@@ -4,9 +4,12 @@ import io
 import scipy.io.wavfile
 import numpy as np
 
+import os
+
 class TTSService:
     def __init__(self):
-        self.model_id = "maya-research/maya1"
+        # Check for local model path from env, otherwise use HF ID
+        self.model_id = os.getenv("MODEL_PATH", "maya-research/maya1")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Loading Maya1 model from {self.model_id} on {self.device}...")
         
@@ -19,7 +22,7 @@ class TTSService:
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
             print("Maya1 model loaded successfully.")
         except Exception as e:
-            print(f"Error loading model: {e}")
+            print(f"Error loading model from {self.model_id}: {e}")
             raise e
 
     def synthesize(self, text: str, voice_description: str, speed: float = 1.0) -> bytes:

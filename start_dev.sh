@@ -11,6 +11,10 @@ if [ ! -d "venv" ]; then
 else
     source venv/bin/activate
 fi
+
+# Optional: Set MODEL_PATH if you have a local copy
+# export MODEL_PATH="/home/dbee-tts-coqui/..." 
+
 uvicorn app.main:app --reload --port 8000 &
 BACKEND_PID=$!
 
