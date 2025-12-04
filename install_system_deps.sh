@@ -20,6 +20,13 @@ echo "Installing FFmpeg and eSpeak..."
 apt-get install -y ffmpeg espeak-ng
 
 echo "Ensuring Node.js 18 is installed..."
+
+# Remove conflicting packages from old Node.js installation
+echo "Removing conflicting packages..."
+apt-get remove -y libnode-dev libnode72 nodejs-doc nodejs npm
+apt-get autoremove -y
+apt-get --fix-broken install -y
+
 # Always run setup to ensure correct version (Node 18+)
 curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 apt-get install -y nodejs
