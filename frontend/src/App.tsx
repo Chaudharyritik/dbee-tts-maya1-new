@@ -5,7 +5,7 @@ import { cn } from './lib/utils';
 
 interface SynthesisResponse {
   audio_base64: string;
-  sample_rate: int;
+  sample_rate: number;
 }
 
 interface HistoryItem {
