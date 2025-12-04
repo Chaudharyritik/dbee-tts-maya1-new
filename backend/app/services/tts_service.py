@@ -106,12 +106,14 @@ class TTSService:
                 
                 # Strip input tokens
                 generated_ids = output[0][inputs.input_ids.shape[1]:]
+                print(f"DEBUG: Generated {len(generated_ids)} tokens: {generated_ids.tolist()}")
                 
-                if len(generated_ids) == 0:
-                    raise ValueError("Model generated 0 tokens. Try a different prompt.")
+                if len(generated_ids) < 7:
+                    raise ValueError(f"Model generated only {len(generated_ids)} tokens, but SNAC requires at least 7 (one frame).")
 
                 # Decode SNAC tokens to audio
                 snac_codes = self.unpack_snac(generated_ids)
+                print(f"DEBUG: Unpacked SNAC codes shapes: {[c.shape for c in snac_codes]}")
                 audio_tensor = self.snac_model.decode(snac_codes)
                 
             audio_data = audio_tensor.squeeze().cpu().numpy()
