@@ -66,58 +66,69 @@ class TTSService:
         ]
 
     def synthesize(self, text: str, voice_description: str, speed: float = 1.0) -> bytes:
-        # Construct the prompt with voice description if the model supports it in this specific way
-        # Note: The specific prompting strategy for Maya1 might vary. 
-        # Based on standard usage for such models, we often prepend the description.
-        # However, if the model expects a specific format, we should adjust.
-        # Assuming standard text-to-speech generation for now.
-        
-        # If the model supports voice description as a separate input or prepended text:
-        # For now, we will just use the text. If Maya1 uses a specific separator, we'd add it.
-        # Research indicated "Natural Language Voice Descriptions". 
-        # Often this is done via a specific prompt structure.
-        # Let's assume a simple concatenation for now or just text if unsure of the exact separator.
-        
-        # NOTE: To fully utilize "Voice Description", we might need to verify the exact prompt format.
-        # But for "direct load", this is the correct code structure.
-        
-        # Prepare input
-        # Note: Maya1 might expect specific formatting for voice description.
-        # For now, we append it or just use text if description is empty.
-        prompt = text
-        if voice_description and voice_description != "Generic female voice":
-             # Simple heuristic: prepend description if provided
-             # Real Maya1 usage might differ, but this is a reasonable start.
-             pass 
+        import traceback
+        try:
+            # Construct the prompt with voice description if the model supports it in this specific way
+            # Note: The specific prompting strategy for Maya1 might vary. 
+            # Based on standard usage for such models, we often prepend the description.
+            # However, if the model expects a specific format, we should adjust.
+            # Assuming standard text-to-speech generation for now.
+            
+            # If the model supports voice description as a separate input or prepended text:
+            # For now, we will just use the text. If Maya1 uses a specific separator, we'd add it.
+            # Research indicated "Natural Language Voice Descriptions". 
+            # Often this is done via a specific prompt structure.
+            # Let's assume a simple concatenation for now or just text if unsure of the exact separator.
+            
+            # NOTE: To fully utilize "Voice Description", we might need to verify the exact prompt format.
+            # But for "direct load", this is the correct code structure.
+            
+            # Prepare input
+            # Note: Maya1 might expect specific formatting for voice description.
+            # For now, we append it or just use text if description is empty.
+            prompt = text
+            if voice_description and voice_description != "Generic female voice":
+                 # Simple heuristic: prepend description if provided
+                 # Real Maya1 usage might differ, but this is a reasonable start.
+                 pass 
 
-        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-        
-        with torch.no_grad():
-            # Generate tokens
-            # We need to set max_new_tokens or similar to avoid infinite generation
-            output = self.model.generate(
-                **inputs, 
-                max_new_tokens=1000, # Adjust as needed
-                do_sample=True, 
-                temperature=0.7
-            )
+            inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
             
-            # Strip input tokens
-            generated_ids = output[0][inputs.input_ids.shape[1]:]
+            with torch.no_grad():
+                # Generate tokens
+                # We need to set max_new_tokens or similar to avoid infinite generation
+                output = self.model.generate(
+                    **inputs, 
+                    max_new_tokens=1000, # Adjust as needed
+                    do_sample=True, 
+                    temperature=0.7
+                )
+                
+                # Strip input tokens
+                generated_ids = output[0][inputs.input_ids.shape[1]:]
+                
+                if len(generated_ids) == 0:
+                    raise ValueError("Model generated 0 tokens. Try a different prompt.")
+
+                # Decode SNAC tokens to audio
+                snac_codes = self.unpack_snac(generated_ids)
+                audio_tensor = self.snac_model.decode(snac_codes)
+                
+            audio_data = audio_tensor.squeeze().cpu().numpy()
+            sample_rate = 24000 # SNAC 24khz
             
-            # Decode SNAC tokens to audio
-            snac_codes = self.unpack_snac(generated_ids)
-            audio_tensor = self.snac_model.decode(snac_codes)
+            # Normalize
+            max_val = np.max(np.abs(audio_data))
+            if max_val > 0:
+                audio_data = audio_data / max_val
             
-        audio_data = audio_tensor.squeeze().cpu().numpy()
-        sample_rate = 24000 # SNAC 24khz
-        
-        # Normalize
-        audio_data = audio_data / np.max(np.abs(audio_data))
-        
-        # Convert to int16
-        audio_int16 = (audio_data * 32767).astype(np.int16)
-        
-        byte_io = io.BytesIO()
-        scipy.io.wavfile.write(byte_io, sample_rate, audio_int16)
-        return byte_io.getvalue()
+            # Convert to int16
+            audio_int16 = (audio_data * 32767).astype(np.int16)
+            
+            byte_io = io.BytesIO()
+            scipy.io.wavfile.write(byte_io, sample_rate, audio_int16)
+            return byte_io.getvalue()
+        except Exception as e:
+            print(f"ERROR in synthesize: {e}")
+            traceback.print_exc()
+            raise e
