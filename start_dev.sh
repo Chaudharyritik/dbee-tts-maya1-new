@@ -27,6 +27,15 @@ BACKEND_PID=$!
 
 # Start Frontend
 echo "Starting Frontend..."
+
+# Try to load user environment
+source ~/.bashrc 2>/dev/null
+source ~/.profile 2>/dev/null
+source ~/.nvm/nvm.sh 2>/dev/null
+
+echo "Debug: PATH=$PATH"
+echo "Debug: npm location=$(which npm)"
+
 if command -v npm &> /dev/null; then
     cd ../frontend
     npm install # Ensure frontend deps are installed
