@@ -1,5 +1,12 @@
 import torch
-from transformers import AutoModelForTextToSpeech, AutoTokenizer
+try:
+    from transformers import AutoModelForTextToSpeech, AutoTokenizer
+except ImportError as e:
+    import transformers
+    print(f"CRITICAL ERROR: Failed to import AutoModelForTextToSpeech.")
+    print(f"Installed transformers version: {transformers.__version__}")
+    print(f"Location: {transformers.__file__}")
+    raise e
 import io
 import scipy.io.wavfile
 import numpy as np
