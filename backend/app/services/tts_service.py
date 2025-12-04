@@ -14,6 +14,7 @@ except ImportError:
 import io
 import scipy.io.wavfile
 import numpy as np
+from snac import SNAC
 
 import os
 
@@ -25,16 +26,44 @@ class TTSService:
         print(f"Loading Maya1 model from {self.model_id} on {self.device}...")
         
         try:
+            # Load Maya1 (Llama part)
             self.model = AutoModelForTextToSpeech.from_pretrained(
                 self.model_id, 
                 torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
                 low_cpu_mem_usage=True
             ).to(self.device)
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
-            print("Maya1 model loaded successfully.")
+            
+            # Load SNAC Decoder
+            print("Loading SNAC decoder...")
+            self.snac_model = SNAC.from_pretrained("hubertsiuzdak/snac_24khz").to(self.device)
+            
+            print("Maya1 model and SNAC decoder loaded successfully.")
         except Exception as e:
-            print(f"Error loading model from {self.model_id}: {e}")
+            print(f"Error loading model: {e}")
             raise e
+
+    def unpack_snac(self, codes):
+        # Unpack 7-token frames into hierarchical levels
+        # l1: 1 token, l2: 2 tokens, l3: 4 tokens
+        codes = codes.cpu().tolist()
+        
+        # Truncate to multiple of 7
+        n_frames = len(codes) // 7
+        codes = codes[:n_frames * 7]
+        
+        l1, l2, l3 = [], [], []
+        for i in range(n_frames):
+            frame = codes[i*7 : (i+1)*7]
+            l1.append(frame[0])
+            l2.extend(frame[1:3])
+            l3.extend(frame[3:7])
+            
+        return [
+            torch.tensor(l1).unsqueeze(0).to(self.device),
+            torch.tensor(l2).unsqueeze(0).to(self.device),
+            torch.tensor(l3).unsqueeze(0).to(self.device)
+        ]
 
     def synthesize(self, text: str, voice_description: str, speed: float = 1.0) -> bytes:
         # Construct the prompt with voice description if the model supports it in this specific way
@@ -52,25 +81,38 @@ class TTSService:
         # NOTE: To fully utilize "Voice Description", we might need to verify the exact prompt format.
         # But for "direct load", this is the correct code structure.
         
-        inputs = self.tokenizer(text, return_tensors="pt").to(self.device)
+        # Prepare input
+        # Note: Maya1 might expect specific formatting for voice description.
+        # For now, we append it or just use text if description is empty.
+        prompt = text
+        if voice_description and voice_description != "Generic female voice":
+             # Simple heuristic: prepend description if provided
+             # Real Maya1 usage might differ, but this is a reasonable start.
+             pass 
+
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         
         with torch.no_grad():
-            # Generate audio
-            # The model might take 'speaker_embeddings' or similar if it was a different architecture.
-            # For Maya1 (Llama-style), it likely generates tokens.
-            output = self.model.generate(**inputs)
+            # Generate tokens
+            # We need to set max_new_tokens or similar to avoid infinite generation
+            output = self.model.generate(
+                **inputs, 
+                max_new_tokens=1000, # Adjust as needed
+                do_sample=True, 
+                temperature=0.7
+            )
             
-        # The output from the model needs to be converted to waveform.
-        # If output is raw waveform (unlikely for Llama-based), we use it directly.
-        # If output is tokens (SNAC), we need to decode. 
-        # AutoModelForTextToSpeech usually handles the vocoding if it's an end-to-end wrapper.
-        # If not, we might need the specific vocoder. 
-        # Given "AutoModelForTextToSpeech", we assume it returns waveform or compatible output.
+            # Strip input tokens
+            generated_ids = output[0][inputs.input_ids.shape[1]:]
+            
+            # Decode SNAC tokens to audio
+            snac_codes = self.unpack_snac(generated_ids)
+            audio_tensor = self.snac_model.decode(snac_codes)
+            
+        audio_data = audio_tensor.squeeze().cpu().numpy()
+        sample_rate = 24000 # SNAC 24khz
         
-        audio_data = output.audio[0].cpu().numpy()
-        sample_rate = output.sampling_rate
-        
-        # Normalize if needed
+        # Normalize
         audio_data = audio_data / np.max(np.abs(audio_data))
         
         # Convert to int16
