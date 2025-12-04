@@ -117,14 +117,15 @@ class TTSService:
             prompt = self.build_prompt(voice_description, text)
             inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
             
-            with torch.no_grad():
+    with torch.no_grad():
                 output = self.model.generate(
                     **inputs,
                     max_new_tokens=2048,
                     min_new_tokens=28, # At least 4 frames
-                    temperature=0.3, # Increased from 0.2 to restore expressiveness
-                    top_p=0.95, # Increased from 0.9 to allow more diverse tokens
-                    repetition_penalty=1.1, # Reduced from 1.2 to avoid penalizing style tokens
+                    temperature=0.45, # Increased to boost expressiveness
+                    top_p=0.9, # Standard
+                    top_k=50, # Added to prevent low-prob token selection (stability)
+                    repetition_penalty=1.15, # Slight increase from 1.1 to prevent loops, but safe for style
                     do_sample=True,
                     eos_token_id=CODE_END_TOKEN_ID,
                     pad_token_id=self.tokenizer.pad_token_id,
