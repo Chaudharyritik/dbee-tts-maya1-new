@@ -17,6 +17,7 @@ def main():
     SOA_ID = 128261
     CODE_START_TOKEN_ID = 128257
     TEXT_EOT_ID = 128009
+    tags = ["<laugh>", "<whisper>", "<gasp>", "<cry>", "<sigh>", "<angry>"]
     
     special_ids = {
         "SOH": SOH_ID,
@@ -36,6 +37,17 @@ def main():
             print(f"  ERROR: {name} round-trip failed! Got {re_encoded} instead of [{tid}]")
         else:
             print(f"  OK: {name} round-trip successful.")
+
+    print("\nChecking tags:")
+    for tag in tags:
+        ids = tokenizer.encode(tag, add_special_tokens=False)
+        tokens = tokenizer.convert_ids_to_tokens(ids)
+        print(f"Tag: '{tag}' -> IDs: {ids} -> Tokens: {tokens}")
+        
+        if len(ids) > 1:
+            print(f"  WARNING: '{tag}' is split into multiple tokens!")
+        else:
+            print(f"  OK: '{tag}' is a single token.")
 
 if __name__ == "__main__":
     main()

@@ -122,9 +122,9 @@ class TTSService:
                     **inputs,
                     max_new_tokens=2048,
                     min_new_tokens=28, # At least 4 frames
-                    temperature=0.2, # Reduced from 0.4 for stability
-                    top_p=0.9,
-                    repetition_penalty=1.2, # Increased from 1.1 to prevent looping
+                    temperature=0.3, # Increased from 0.2 to restore expressiveness
+                    top_p=0.95, # Increased from 0.9 to allow more diverse tokens
+                    repetition_penalty=1.1, # Reduced from 1.2 to avoid penalizing style tokens
                     do_sample=True,
                     eos_token_id=CODE_END_TOKEN_ID,
                     pad_token_id=self.tokenizer.pad_token_id,
