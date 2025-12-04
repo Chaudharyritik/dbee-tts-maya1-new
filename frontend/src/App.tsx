@@ -30,7 +30,7 @@ function App() {
     if (!text.trim()) return;
     setIsLoading(true);
     try {
-      const response = await axios.post<SynthesisResponse>('http://localhost:8000/api/synthesize', {
+      const response = await axios.post<SynthesisResponse>('/api/synthesize', {
         text,
         voice_description: voiceDesc,
         speed: 1.0,
