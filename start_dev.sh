@@ -10,10 +10,8 @@ fi
 
 source venv/bin/activate
 
-# Aggressively fix transformers version
-echo "Ensuring clean transformers installation..."
-pip uninstall -y transformers
-pip install --upgrade -r requirements.txt
+# Install dependencies (only installs if missing/outdated)
+pip install -r requirements.txt
 
 # Verify installation
 echo "Verifying transformers version..."
