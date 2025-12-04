@@ -7,6 +7,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 echo "Updating package list..."
+export DEBIAN_FRONTEND=noninteractive
 apt-get update
 
 echo "Installing FFmpeg and eSpeak..."
