@@ -9,8 +9,15 @@ if [ ! -d "venv" ]; then
 fi
 
 source venv/bin/activate
-# Always install/upgrade dependencies to ensure we have the correct versions
+
+# Aggressively fix transformers version
+echo "Ensuring clean transformers installation..."
+pip uninstall -y transformers
 pip install --upgrade -r requirements.txt
+
+# Verify installation
+echo "Verifying transformers version..."
+python3 -c "import transformers; print(f'Transformers version: {transformers.__version__}')"
 
 # Optional: Set MODEL_PATH if you have a local copy
 # export MODEL_PATH="/home/dbee-tts-coqui/..." 
