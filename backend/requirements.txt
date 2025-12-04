@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+torch
+torchaudio
+transformers
+accelerate
+scipy
+python-multipart
+pydantic
+pydantic-settings
+snac
+soundfile
