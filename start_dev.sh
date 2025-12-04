@@ -38,7 +38,7 @@ echo "Debug: npm location=$(which npm)"
 
 if command -v npm &> /dev/null; then
     cd ../frontend
-    npm install # Ensure frontend deps are installed
+    npm install --legacy-peer-deps # Ensure frontend deps are installed (bypass peer dep conflicts)
     npm run dev &
     FRONTEND_PID=$!
 else
