@@ -1,12 +1,16 @@
 import torch
 try:
     from transformers import AutoModelForTextToSpeech, AutoTokenizer
-except ImportError as e:
-    import transformers
-    print(f"CRITICAL ERROR: Failed to import AutoModelForTextToSpeech.")
-    print(f"Installed transformers version: {transformers.__version__}")
-    print(f"Location: {transformers.__file__}")
-    raise e
+except ImportError:
+    try:
+        print("AutoModelForTextToSpeech not found. Trying AutoModelForCausalLM (Maya1 is Llama-based)...")
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+        AutoModelForTextToSpeech = AutoModelForCausalLM # Alias it for compatibility
+    except ImportError as e:
+        import transformers
+        print(f"CRITICAL ERROR: Failed to import AutoModel classes.")
+        print(f"Available in transformers: {dir(transformers)}")
+        raise e
 import io
 import scipy.io.wavfile
 import numpy as np

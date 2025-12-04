@@ -10,3 +10,5 @@ pydantic
 pydantic-settings
 snac
 soundfile
+sentencepiece
+protobuf
