@@ -60,9 +60,9 @@ class TTSService:
             l3.extend(frame[3:7])
             
         return [
-            torch.tensor(l1).unsqueeze(0).to(self.device),
-            torch.tensor(l2).unsqueeze(0).to(self.device),
-            torch.tensor(l3).unsqueeze(0).to(self.device)
+            torch.tensor(l1, dtype=torch.long).unsqueeze(0).to(self.device),
+            torch.tensor(l2, dtype=torch.long).unsqueeze(0).to(self.device),
+            torch.tensor(l3, dtype=torch.long).unsqueeze(0).to(self.device)
         ]
 
     def synthesize(self, text: str, voice_description: str, speed: float = 1.0) -> bytes:
