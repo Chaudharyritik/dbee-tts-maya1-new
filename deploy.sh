@@ -19,7 +19,7 @@ echo -e "${GREEN}Project directory: $PROJECT_DIR${NC}"
 # 1. Install System Dependencies
 echo -e "${GREEN}Installing system dependencies...${NC}"
 apt-get update
-apt-get install -y nginx python3-venv python3-pip nodejs npm
+apt-get install -y nginx python3-venv python3-pip nodejs
 
 # 2. Setup Backend
 echo -e "${GREEN}Setting up Backend...${NC}"
